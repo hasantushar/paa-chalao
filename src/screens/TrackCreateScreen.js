@@ -1,43 +1,37 @@
-//import '../_mockLocation';
-import React, { useState, useEffect, useContext } from 'react';
+import '../_mockLocation';
+import React, { useContext, useCallback } from 'react';
 import { StyleSheet } from 'react-native';
 import { Text } from 'react-native-elements';
-import { SafeAreaView } from 'react-navigation';
-import { requestPermissionsAsync, watchPositionAsync, Accuracy } from 'expo-location';
+import { SafeAreaView, withNavigationFocus } from 'react-navigation';
 import Map from '../components/Map';
 import { Context as LocationContext } from '../context/LocationContext';
+import useLocation from '../hooks/useLocation';
+import TrackForm from '../components/TrackForm';
+import { AntDesign } from '@expo/vector-icons';
 
-const TrackCreateScreen = () => {
-    const [err, setErr] = useState(null);
-    const { addLocation } = useContext(LocationContext);
+const TrackCreateScreen = ({ isFocused }) => {
+    const { state: {recording}, addLocation } = useContext(LocationContext);
+    const callback = useCallback((location) => {
+        addLocation(location, recording);}, [recording])
+    //const [err] = useLocation((location) => addLocation(location));
 
-    const startWatching = async () => {
-        try {
-            await requestPermissionsAsync();
-            await watchPositionAsync({
-                accuracy: Accuracy.BestForNavigation,
-                distanceInterval: 10,
-                timeInterval: 1000
-            }, (location) => {
-                addLocation(location);
-            });
-        }
-        catch (e) {
-            setErr(e);
-        }
-    };
+    const [err] = useLocation( isFocused || recording , callback );
 
-    useEffect(() => {
-        startWatching();
-    }, []);
+    //console.log(isFocused);
 
     return <SafeAreaView forceInset={{ top: 'always' }}>
-        <Text h2>Track Create Screen</Text>
+        <Text h2>Create a Track</Text>
         <Map />
         {err ? <Text>please enable location</Text> : null }
+        <TrackForm />
     </SafeAreaView>
+};
+
+TrackCreateScreen.navigationOptions = {
+    title: 'Add Track',
+    tabBarIcon: <AntDesign name="plus" size={20} />
 };
 
 const styles = StyleSheet.create({});
 
-export default TrackCreateScreen;
+export default withNavigationFocus(TrackCreateScreen);
